@@ -141,13 +141,6 @@
       cursor: not-allowed;
     }
 
-    .form-hint {
-      margin: -4px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
     .amount-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -304,16 +297,19 @@
       border-top: 1px solid var(--line);
       color: var(--muted);
       font-size: 13px;
+      line-height: 1.7;
+      text-align: center;
     }
 
     .contact-line {
-      margin-top: 10px;
+      margin-top: 12px;
       padding: 10px 12px;
       border: 1px solid rgba(21, 94, 117, 0.18);
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.72);
       color: var(--brand-strong);
       font-weight: 700;
+      text-align: center;
     }
 
     @media (max-width: 800px) {
@@ -386,12 +382,12 @@
         <form id="invoiceForm">
           <label>
             الاسم
-            <input id="customerName" type="text" autocomplete="name" placeholder="مثال: محمد عبدالله" required>
+            <input id="customerName" type="text" autocomplete="name" placeholder="محمد عبدالله" required>
           </label>
 
           <label>
             رقم الهاتف
-            <input id="phoneNumber" type="tel" autocomplete="tel" placeholder="05xxxxxxxx" required>
+            <input id="phoneNumber" type="tel" autocomplete="tel" inputmode="numeric" minlength="8" maxlength="8" pattern="[79][0-9]{7}" required>
           </label>
 
           <label>
@@ -413,7 +409,7 @@
 
           <label>
             المبلغ المتبقي
-            <input id="remainingAmount" type="number" min="0" step="0.01" placeholder="0" required>
+            <input id="remainingAmount" type="number" min="0" step="0.01" placeholder="0" readonly required>
           </label>
 
           <div class="actions">
@@ -441,7 +437,7 @@
         <article class="invoice" id="invoicePreview">
           <div class="invoice-head">
             <img class="invoice-logo" src="al-rafif-logo.png" alt="شعار استراحة الرفيف">
-            <h2 class="invoice-title">فاتورة حجز رسمية</h2>
+            <h2 class="invoice-title">الفاتورة</h2>
             <div class="invoice-meta">استراحة الرفيف | AL-RAFIF VILLA</div>
             <div class="invoice-stamps">
               <div id="invoiceNumber"></div>
@@ -456,7 +452,7 @@
                 <td id="previewName">-</td>
               </tr>
               <tr>
-                <th>رقم الهاتف</th>
+                <th>رقم هاتف العميل</th>
                 <td id="previewPhone">-</td>
               </tr>
               <tr>
@@ -479,7 +475,8 @@
           </table>
 
           <div class="invoice-footer">
-            تم إصدار هذه الفاتورة بناءً على بيانات الحجز المدخلة.
+            <div>صدرت هذه الفاتورة آلياً بناءً على بيانات الحجز المدخلة.</div>
+            <div class="contact-line">رقم التواصل: <span id="previewContact">-</span></div>
           </div>
         </article>
       </section>
@@ -504,13 +501,17 @@
       total: document.getElementById('previewTotal'),
       paid: document.getElementById('previewPaid'),
       remaining: document.getElementById('previewRemaining'),
+      contact: document.getElementById('previewContact'),
       number: document.getElementById('invoiceNumber'),
       issuedAt: document.getElementById('invoiceIssuedAt')
     };
 
     const form = document.getElementById('invoiceForm');
     const printButton = document.getElementById('printButton');
-    let remainingEdited = false;
+    const accountContactNumber = '77472790';
+    const invoiceSerialStorageKey = 'alRafifInvoiceSerial';
+    const invoiceUsedStorageKey = 'alRafifUsedInvoiceNumbers';
+    let nextInvoiceNumber = '';
     const propertyTerms = [
       'إدارة العقار غير مسؤولة عن فقدان الأغراض الشخصية ولا تتحمل أي تبعات تجاه الغرض المفقود.',
       'على المستأجر أخذ الحيطة والحذر عند استخدام حوض السباحة ومراقبة الأطفال، ويتحمل المستأجر جميع الإجراءات القانونية تجاه أي حالة غرق لا قدر الله.',
@@ -564,6 +565,71 @@
       }).format(new Date(`${value}T00:00:00`));
     }
 
+    function normalizeDigits(value) {
+      const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
+      const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+      return String(value).replace(/[٠-٩۰-۹]/g, (digit) => {
+        const arabicIndex = arabicDigits.indexOf(digit);
+        return arabicIndex >= 0 ? String(arabicIndex) : String(persianDigits.indexOf(digit));
+      });
+    }
+
+    function cleanPhoneField(field) {
+      const cleaned = normalizeDigits(field.value).replace(/[^\d]/g, '').slice(0, 8);
+      if (field.value !== cleaned) {
+        field.value = cleaned;
+      }
+      return cleaned;
+    }
+
+    function validatePhoneField(field, required) {
+      const value = cleanPhoneField(field);
+      let message = '';
+
+      if (!value) {
+        message = required ? 'اكتب رقم الهاتف.' : '';
+      } else if (value.length !== 8) {
+        message = 'رقم الهاتف لازم يكون 8 أرقام.';
+      } else if (!/^[79]/.test(value)) {
+        message = 'رقم الهاتف لازم يبدأ بـ 9 أو 7.';
+      }
+
+      field.setCustomValidity(message);
+      return message === '';
+    }
+
+    function todayDateString() {
+      const now = new Date();
+      const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+      return localDate.toISOString().slice(0, 10);
+    }
+
+    function setupBookingDate() {
+      const today = todayDateString();
+      fields.date.min = today;
+      if (!fields.date.value || fields.date.value < today) {
+        fields.date.value = today;
+      }
+      fields.date.setCustomValidity('');
+    }
+
+    function validateBookingDate() {
+      const today = todayDateString();
+      fields.date.min = today;
+
+      if (!fields.date.value) {
+        fields.date.setCustomValidity('اختر تاريخ الحجز.');
+        return false;
+      }
+
+      if (fields.date.value < today) {
+        fields.date.value = today;
+      }
+
+      fields.date.setCustomValidity('');
+      return true;
+    }
+
     function getInvoiceData() {
       return {
         name: fields.name.value.trim(),
@@ -575,10 +641,76 @@
       };
     }
 
-    function makeInvoiceNumber() {
-      const now = new Date();
-      const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-      return `RAF-${datePart}`;
+    function invoiceDateParts(date) {
+      return {
+        datePart: `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`,
+        timePart: `${String(date.getHours()).padStart(2, '0')}${String(date.getMinutes()).padStart(2, '0')}${String(date.getSeconds()).padStart(2, '0')}`
+      };
+    }
+
+    function readInvoiceSerial() {
+      try {
+        return Number(localStorage.getItem(invoiceSerialStorageKey)) || 0;
+      } catch (error) {
+        return 0;
+      }
+    }
+
+    function writeInvoiceSerial(serial) {
+      try {
+        localStorage.setItem(invoiceSerialStorageKey, String(serial));
+      } catch (error) {
+        // If storage is unavailable, the timestamp still keeps the number unique for this session.
+      }
+    }
+
+    function readUsedInvoiceNumbers() {
+      try {
+        return new Set(JSON.parse(localStorage.getItem(invoiceUsedStorageKey) || '[]'));
+      } catch (error) {
+        return new Set();
+      }
+    }
+
+    function writeUsedInvoiceNumbers(usedNumbers) {
+      try {
+        const recentNumbers = Array.from(usedNumbers).slice(-1000);
+        localStorage.setItem(invoiceUsedStorageKey, JSON.stringify(recentNumbers));
+      } catch (error) {
+        // Keeping the serial number is enough when the used-number list cannot be saved.
+      }
+    }
+
+    function formatInvoiceNumber(date, serial) {
+      const parts = invoiceDateParts(date);
+      return `RAF-${parts.datePart}-${parts.timePart}-${String(serial).padStart(4, '0')}`;
+    }
+
+    function serialFromInvoiceNumber(invoiceNumber) {
+      const match = String(invoiceNumber || '').match(/-(\d+)$/);
+      return match ? Number(match[1]) : 0;
+    }
+
+    function peekInvoiceNumber() {
+      return formatInvoiceNumber(new Date(), readInvoiceSerial() + 1);
+    }
+
+    function reserveInvoiceNumber() {
+      const usedNumbers = readUsedInvoiceNumbers();
+      const savedSerial = readInvoiceSerial();
+      const preferredSerial = serialFromInvoiceNumber(nextInvoiceNumber);
+      let serial = preferredSerial > savedSerial ? preferredSerial : savedSerial + 1;
+      let invoiceNumber = preferredSerial > savedSerial ? nextInvoiceNumber : formatInvoiceNumber(new Date(), serial);
+
+      while (usedNumbers.has(invoiceNumber)) {
+        serial += 1;
+        invoiceNumber = formatInvoiceNumber(new Date(), serial);
+      }
+
+      usedNumbers.add(invoiceNumber);
+      writeInvoiceSerial(serial);
+      writeUsedInvoiceNumbers(usedNumbers);
+      return invoiceNumber;
     }
 
     function formatIssuedAt() {
@@ -592,15 +724,13 @@
     }
 
     function updateRemaining() {
-      if (remainingEdited) {
-        return;
-      }
-
       const total = Number(fields.total.value);
       const paid = Number(fields.paid.value);
 
       if (Number.isFinite(total) && Number.isFinite(paid) && fields.total.value !== '' && fields.paid.value !== '') {
         fields.remaining.value = Math.max(total - paid, 0).toFixed(2).replace(/\.00$/, '');
+      } else {
+        fields.remaining.value = '';
       }
     }
 
@@ -612,7 +742,9 @@
       preview.total.textContent = data.total ? `${formatMoney(data.total)} ريال` : '-';
       preview.paid.textContent = data.paid ? `${formatMoney(data.paid)} ريال` : '-';
       preview.remaining.textContent = data.remaining ? `${formatMoney(data.remaining)} ريال` : '-';
-      preview.number.textContent = `رقم الفاتورة: ${makeInvoiceNumber()}`;
+      preview.contact.textContent = accountContactNumber;
+      nextInvoiceNumber = nextInvoiceNumber || peekInvoiceNumber();
+      preview.number.textContent = `رقم الفاتورة: ${nextInvoiceNumber}`;
       preview.issuedAt.textContent = `تاريخ الإصدار: ${formatIssuedAt()}`;
     }
 
@@ -653,14 +785,14 @@
     <table>
       <tbody>
         <tr><th>الاسم</th><td>${escapeHtml(data.name || '-')}</td></tr>
-        <tr><th>رقم الهاتف</th><td>${escapeHtml(data.phone || '-')}</td></tr>
+        <tr><th>رقم هاتف العميل</th><td>${escapeHtml(data.phone || '-')}</td></tr>
         <tr><th>تاريخ الحجز</th><td>${escapeHtml(formatDate(data.date))}</td></tr>
         <tr><th>المبلغ الإجمالي</th><td>${escapeHtml(data.total ? `${formatMoney(data.total)} ريال` : '-')}</td></tr>
         <tr><th>المبلغ المدفوع</th><td>${escapeHtml(data.paid ? `${formatMoney(data.paid)} ريال` : '-')}</td></tr>
         <tr><th>المبلغ المتبقي</th><td class="remaining">${escapeHtml(data.remaining ? `${formatMoney(data.remaining)} ريال` : '-')}</td></tr>
       </tbody>
     </table>
-    <div class="footer">تم إصدار هذه الفاتورة بناءً على بيانات الحجز المدخلة.</div>
+    <div class="footer">صدرت هذه الفاتورة آلياً بناءً على بيانات الحجز المدخلة.</div>
   </main>
 </body>
 </html>`;
@@ -691,6 +823,44 @@
       ctx.arcTo(x, y + height, x, y, r);
       ctx.arcTo(x, y, x + width, y, r);
       ctx.closePath();
+    }
+
+    function drawCementBackground(ctx, width, height) {
+      const gradient = ctx.createLinearGradient(0, 0, width, height);
+      gradient.addColorStop(0, '#f3f2ee');
+      gradient.addColorStop(0.48, '#e2e0da');
+      gradient.addColorStop(1, '#cfcac1');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.save();
+      ctx.globalAlpha = 0.20;
+      for (let index = 0; index < 950; index += 1) {
+        const x = (index * 37) % width;
+        const y = (index * 83) % height;
+        const tone = 188 + ((index * 29) % 52);
+        ctx.fillStyle = `rgb(${tone}, ${tone}, ${Math.max(tone - 6, 0)})`;
+        ctx.fillRect(x, y, 1, 1);
+      }
+      ctx.globalAlpha = 0.16;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(width * 0.28, height * 0.18, 130, 58, -0.35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#b8b4ab';
+      ctx.beginPath();
+      ctx.ellipse(width * 0.82, height * 0.82, 116, 72, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawDocumentPanel(ctx, width, height) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.86)';
+      drawRoundRect(ctx, 12, 12, width - 24, height - 24, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#d9dee8';
+      ctx.lineWidth = 1;
+      ctx.stroke();
     }
 
     function drawText(ctx, text, x, y, options = {}) {
@@ -839,17 +1009,12 @@
 
       const ctx = canvas.getContext('2d');
       ctx.scale(scale, scale);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, pageWidth, pageHeight);
+      drawCementBackground(ctx, pageWidth, pageHeight);
+      drawDocumentPanel(ctx, pageWidth, pageHeight);
 
       const logoSource = window.AL_RAFIF_LOGO_DATA_URL || 'al-rafif-logo.png';
       const padding = 22;
       const contentWidth = pageWidth - (padding * 2);
-
-      ctx.strokeStyle = '#d9dee8';
-      ctx.lineWidth = 1;
-      drawRoundRect(ctx, 12, 12, pageWidth - 24, pageHeight - 24, 8);
-      ctx.stroke();
 
       try {
         const logo = await loadImage(logoSource);
@@ -863,7 +1028,7 @@
         });
       }
 
-      drawText(ctx, 'فاتورة حجز رسمية', pageWidth / 2, 166, {
+      drawText(ctx, 'الفاتورة', pageWidth / 2, 166, {
         font: 'bold 24px Tahoma, Arial, sans-serif',
         align: 'center',
         color: '#155e75'
@@ -888,7 +1053,7 @@
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      drawText(ctx, `رقم الفاتورة: ${makeInvoiceNumber()}`, pageWidth - padding - 12, 260, {
+      drawText(ctx, `رقم الفاتورة: ${data.invoiceNumber || nextInvoiceNumber || peekInvoiceNumber()}`, pageWidth - padding - 12, 260, {
         font: '13px Tahoma, Arial, sans-serif',
         color: '#18212f'
       });
@@ -899,7 +1064,7 @@
 
       const rows = [
         ['الاسم', data.name || '-'],
-        ['رقم الهاتف', data.phone || '-'],
+        ['رقم هاتف العميل', data.phone || '-'],
         ['تاريخ الحجز', formatDate(data.date)],
         ['المبلغ الإجمالي', data.total ? `${formatMoney(data.total)} ريال` : '-'],
         ['المبلغ المدفوع', data.paid ? `${formatMoney(data.paid)} ريال` : '-'],
@@ -958,17 +1123,32 @@
         color: '#087f5b'
       });
 
-      const footerY = pageHeight - 88;
+      const footerLineY = pageHeight - 108;
+      const footerTextY = pageHeight - 88;
+      const contactBoxY = pageHeight - 70;
+      const pageNumberY = pageHeight - 22;
+
       ctx.strokeStyle = '#d9dee8';
       ctx.beginPath();
-      ctx.moveTo(padding, footerY - 18);
-      ctx.lineTo(pageWidth - padding, footerY - 18);
+      ctx.moveTo(padding, footerLineY);
+      ctx.lineTo(pageWidth - padding, footerLineY);
       ctx.stroke();
-      drawWrappedText(ctx, 'تم إصدار هذه الفاتورة بناءً على بيانات الحجز المدخلة، وتعد مرجعاً رسمياً للحجز والمبالغ الموضحة أعلاه.', pageWidth - padding, footerY, contentWidth, 18, {
-        font: '12px Tahoma, Arial, sans-serif',
+      drawText(ctx, 'صدرت هذه الفاتورة آلياً بناءً على بيانات الحجز المدخلة.', pageWidth / 2, footerTextY, {
+        font: '11px Tahoma, Arial, sans-serif',
+        align: 'center',
         color: '#667085'
       });
-      drawText(ctx, 'صفحة 1 من 2', pageWidth / 2, pageHeight - 28, {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.70)';
+      drawRoundRect(ctx, padding, contactBoxY, contentWidth, 32, 8);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(21, 94, 117, 0.20)';
+      ctx.stroke();
+      drawText(ctx, `رقم التواصل: ${accountContactNumber}`, pageWidth / 2, contactBoxY + 21, {
+        font: 'bold 13px Tahoma, Arial, sans-serif',
+        align: 'center',
+        color: '#0e475b'
+      });
+      drawText(ctx, 'صفحة 1 من 2', pageWidth / 2, pageNumberY, {
         font: '11px Tahoma, Arial, sans-serif',
         align: 'center',
         color: '#98a2b3'
@@ -987,17 +1167,12 @@
 
       const ctx = canvas.getContext('2d');
       ctx.scale(scale, scale);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, pageWidth, pageHeight);
+      drawCementBackground(ctx, pageWidth, pageHeight);
+      drawDocumentPanel(ctx, pageWidth, pageHeight);
 
       const padding = 20;
       const contentWidth = pageWidth - (padding * 2);
       const logoSource = window.AL_RAFIF_LOGO_DATA_URL || 'al-rafif-logo.png';
-
-      ctx.strokeStyle = '#d9dee8';
-      ctx.lineWidth = 1;
-      drawRoundRect(ctx, 12, 12, pageWidth - 24, pageHeight - 24, 8);
-      ctx.stroke();
 
       try {
         const logo = await loadImage(logoSource);
@@ -1016,7 +1191,7 @@
         align: 'center',
         color: '#155e75'
       });
-      drawText(ctx, `رقم الفاتورة: ${makeInvoiceNumber()}`, pageWidth / 2, 149, {
+      drawText(ctx, `رقم الفاتورة: ${data.invoiceNumber || nextInvoiceNumber || peekInvoiceNumber()}`, pageWidth / 2, 149, {
         font: '12px Tahoma, Arial, sans-serif',
         align: 'center',
         color: '#667085'
@@ -1088,6 +1263,10 @@
       ctx.moveTo(padding, footerY - 15);
       ctx.lineTo(pageWidth - padding, footerY - 15);
       ctx.stroke();
+      drawText(ctx, `رقم التواصل: ${accountContactNumber}`, pageWidth - padding, footerY - 20, {
+        font: 'bold 10px Tahoma, Arial, sans-serif',
+        color: '#0e475b'
+      });
       drawText(ctx, 'صفحة 2 من 2', pageWidth / 2, footerY, {
         font: '11px Tahoma, Arial, sans-serif',
         align: 'center',
@@ -1098,7 +1277,10 @@
     }
 
     async function downloadInvoice() {
-      const data = getInvoiceData();
+      const data = {
+        ...getInvoiceData(),
+        invoiceNumber: reserveInvoiceNumber()
+      };
       const invoicePage = await renderInvoiceCanvas(data);
       const termsPage = await renderTermsCanvas(data);
       const blob = createPdfFromCanvases([invoicePage.canvas, termsPage.canvas], invoicePage.pageWidth, invoicePage.pageHeight);
@@ -1111,6 +1293,8 @@
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      nextInvoiceNumber = peekInvoiceNumber();
+      updatePreview();
     }
 
     fields.total.addEventListener('input', () => {
@@ -1123,8 +1307,13 @@
       updatePreview();
     });
 
-    fields.remaining.addEventListener('input', () => {
-      remainingEdited = true;
+    fields.phone.addEventListener('input', () => {
+      validatePhoneField(fields.phone, true);
+      updatePreview();
+    });
+
+    fields.date.addEventListener('change', () => {
+      validateBookingDate();
       updatePreview();
     });
 
@@ -1136,7 +1325,12 @@
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       updateRemaining();
+      validateBookingDate();
       updatePreview();
+      validatePhoneField(fields.phone, true);
+      if (!form.reportValidity()) {
+        return;
+      }
       try {
         await downloadInvoice();
       } catch (error) {
@@ -1147,10 +1341,21 @@
 
     printButton.addEventListener('click', () => {
       updateRemaining();
+      validateBookingDate();
+      validatePhoneField(fields.phone, true);
+      if (!form.reportValidity()) {
+        return;
+      }
+      nextInvoiceNumber = reserveInvoiceNumber();
       updatePreview();
       window.print();
+      setTimeout(() => {
+        nextInvoiceNumber = peekInvoiceNumber();
+        updatePreview();
+      }, 1000);
     });
 
+    setupBookingDate();
     updatePreview();
   </script>
 </body>
