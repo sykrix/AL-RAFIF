@@ -7,16 +7,17 @@
   <style>
     :root {
       color-scheme: light;
-      --bg: #f7f8fa;
-      --surface: #ffffff;
-      --text: #18212f;
-      --muted: #667085;
-      --line: #d9dee8;
-      --brand: #155e75;
-      --brand-strong: #0e475b;
-      --accent: #b7791f;
+      --bg: #d8d7d2;
+      --surface: rgba(255, 255, 255, 0.88);
+      --surface-solid: #ffffff;
+      --text: #18212c;
+      --muted: #647083;
+      --line: #cfd5de;
+      --brand: #145f70;
+      --brand-strong: #0a4350;
+      --accent: #a87524;
       --ok: #087f5b;
-      --shadow: 0 18px 50px rgba(24, 33, 47, 0.08);
+      --shadow: 0 18px 45px rgba(24, 33, 47, 0.12);
       --radius: 8px;
     }
 
@@ -28,14 +29,17 @@
       margin: 0;
       min-height: 100vh;
       font-family: Tahoma, Arial, sans-serif;
-      background: var(--bg);
+      background:
+        linear-gradient(rgba(245, 246, 244, 0.80), rgba(226, 225, 220, 0.88)),
+        url("concrete-texture.png") center / 520px auto repeat,
+        var(--bg);
       color: var(--text);
     }
 
     .page {
       width: min(1120px, calc(100% - 32px));
       margin: 0 auto;
-      padding: 28px 0;
+      padding: 30px 0 36px;
     }
 
     header {
@@ -43,9 +47,13 @@
       align-items: center;
       justify-content: space-between;
       gap: 18px;
-      margin-bottom: 22px;
-      padding-bottom: 18px;
-      border-bottom: 1px solid var(--line);
+      margin-bottom: 24px;
+      padding: 16px 18px;
+      border: 1px solid rgba(207, 213, 222, 0.82);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(3px);
     }
 
     .brand {
@@ -56,12 +64,12 @@
     }
 
     .mark {
-      width: 76px;
-      height: 58px;
+      width: 92px;
+      height: 64px;
       flex: 0 0 auto;
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: #fff;
+      background: rgba(255, 255, 255, 0.84);
       object-fit: contain;
       padding: 4px;
     }
@@ -82,20 +90,17 @@
     .layout {
       display: grid;
       grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
-      gap: 22px;
+      gap: 24px;
       align-items: start;
     }
 
-    .panel,
-    .preview {
+    .panel {
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-    }
-
-    .panel {
-      padding: 18px;
+      padding: 20px;
+      backdrop-filter: blur(3px);
     }
 
     .section-title {
@@ -107,6 +112,7 @@
     form {
       display: grid;
       gap: 14px;
+      min-width: 0;
     }
 
     label {
@@ -115,19 +121,55 @@
       color: var(--text);
       font-size: 14px;
       font-weight: 700;
+      min-width: 0;
     }
 
     input {
       width: 100%;
+      max-width: 100%;
+      min-width: 0;
       min-height: 46px;
       padding: 10px 12px;
-      border: 1px solid #c6cfdd;
+      border: 1px solid #bfc8d2;
       border-radius: 8px;
-      background: #fff;
+      background: rgba(255, 255, 255, 0.94);
       color: var(--text);
       font: inherit;
       outline: none;
       transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    input[type="date"] {
+      appearance: none;
+      -webkit-appearance: none;
+      direction: ltr;
+      display: block;
+      inline-size: 100%;
+      max-inline-size: 100%;
+      min-inline-size: 0;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    input[type="date"]::-webkit-date-and-time-value {
+      margin: 0;
+      min-width: 0;
+      text-align: center;
+      width: 100%;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      margin-inline-start: 0;
+    }
+
+    input[type="number"] {
+      appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
 
     input:focus {
@@ -136,7 +178,7 @@
     }
 
     input[readonly] {
-      background: #eef1f3;
+      background: #e7e9ea;
       color: #53606f;
       cursor: not-allowed;
     }
@@ -145,6 +187,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
+      min-width: 0;
     }
 
     .actions {
@@ -187,7 +230,7 @@
       width: 46px;
       padding: 0;
       border: 1px solid var(--line);
-      background: #fff;
+      background: rgba(255, 255, 255, 0.88);
       color: var(--text);
     }
 
@@ -205,7 +248,10 @@
       display: flex;
       justify-content: center;
       overflow: hidden;
-      padding: 18px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
     }
 
     .invoice {
@@ -213,12 +259,12 @@
       min-height: 720px;
       padding: 22px;
       background:
-        radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.88) 0 20%, transparent 36%),
-        radial-gradient(circle at 82% 28%, rgba(196, 193, 186, 0.28) 0 18%, transparent 34%),
-        linear-gradient(135deg, #f2f1ed 0%, #e2e0da 46%, #cfcac1 100%);
+        linear-gradient(rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.88)),
+        url("concrete-texture.png") center / 420px auto repeat,
+        #ebe9e3;
       border: 1px solid var(--line);
       border-radius: 8px;
-      box-shadow: inset 0 0 0 999px rgba(255, 255, 255, 0.70);
+      box-shadow: 0 18px 45px rgba(24, 33, 47, 0.14);
     }
 
     .invoice-head {
@@ -256,11 +302,18 @@
       grid-template-columns: 1fr;
       gap: 6px;
       margin-top: 8px;
-      padding: 10px;
-      border: 1px solid var(--line);
+      padding: 11px 12px;
+      border: 1px solid rgba(20, 95, 112, 0.18);
       border-radius: 8px;
-      background: #fbfcfe;
+      background: rgba(255, 255, 255, 0.72);
       text-align: right;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    #invoiceNumber {
+      white-space: nowrap;
+      font-size: 11.5px;
     }
 
     .invoice-table {
@@ -272,16 +325,17 @@
 
     .invoice-table th,
     .invoice-table td {
-      padding: 13px 10px;
+      padding: 13px 12px;
       border: 1px solid var(--line);
       text-align: right;
       vertical-align: middle;
       overflow-wrap: anywhere;
+      background: rgba(255, 255, 255, 0.78);
     }
 
     .invoice-table th {
       width: 42%;
-      background: #f4f7fb;
+      background: rgba(234, 238, 240, 0.88);
       color: var(--brand-strong);
       font-weight: 700;
     }
@@ -304,9 +358,9 @@
     .contact-line {
       margin-top: 12px;
       padding: 10px 12px;
-      border: 1px solid rgba(21, 94, 117, 0.18);
+      border: 1px solid rgba(20, 95, 112, 0.22);
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.72);
+      background: rgba(255, 255, 255, 0.70);
       color: var(--brand-strong);
       font-weight: 700;
       text-align: center;
@@ -484,6 +538,7 @@
   </main>
 
   <script src="logo-data.js"></script>
+  <script src="texture-data.js"></script>
   <script>
     const fields = {
       name: document.getElementById('customerName'),
@@ -814,6 +869,13 @@
       ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
     }
 
+    function drawImageCover(ctx, image, x, y, width, height) {
+      const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+      const drawWidth = image.naturalWidth * scale;
+      const drawHeight = image.naturalHeight * scale;
+      ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+    }
+
     function drawRoundRect(ctx, x, y, width, height, radius) {
       const r = Math.min(radius, width / 2, height / 2);
       ctx.beginPath();
@@ -825,29 +887,45 @@
       ctx.closePath();
     }
 
-    function drawCementBackground(ctx, width, height) {
+    async function loadConcreteTexture() {
+      const source = window.AL_RAFIF_TEXTURE_DATA_URL || 'concrete-texture.png';
+      try {
+        return await loadImage(source);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function drawCementBackground(ctx, width, height, textureImage) {
       const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#f3f2ee');
-      gradient.addColorStop(0.48, '#e2e0da');
-      gradient.addColorStop(1, '#cfcac1');
+      gradient.addColorStop(0, '#f4f4f1');
+      gradient.addColorStop(0.52, '#dbdad6');
+      gradient.addColorStop(1, '#bbb8b1');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
+      if (textureImage) {
+        ctx.save();
+        ctx.globalAlpha = 0.28;
+        drawImageCover(ctx, textureImage, 0, 0, width, height);
+        ctx.restore();
+      }
+
       ctx.save();
-      ctx.globalAlpha = 0.20;
+      ctx.globalAlpha = textureImage ? 0.08 : 0.18;
       for (let index = 0; index < 950; index += 1) {
         const x = (index * 37) % width;
         const y = (index * 83) % height;
-        const tone = 188 + ((index * 29) % 52);
-        ctx.fillStyle = `rgb(${tone}, ${tone}, ${Math.max(tone - 6, 0)})`;
+        const tone = 168 + ((index * 29) % 58);
+        ctx.fillStyle = `rgb(${tone}, ${tone}, ${tone})`;
         ctx.fillRect(x, y, 1, 1);
       }
-      ctx.globalAlpha = 0.16;
+      ctx.globalAlpha = 0.20;
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.ellipse(width * 0.28, height * 0.18, 130, 58, -0.35, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#b8b4ab';
+      ctx.fillStyle = '#b9b7b0';
       ctx.beginPath();
       ctx.ellipse(width * 0.82, height * 0.82, 116, 72, -0.2, 0, Math.PI * 2);
       ctx.fill();
@@ -855,10 +933,10 @@
     }
 
     function drawDocumentPanel(ctx, width, height) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.86)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
       drawRoundRect(ctx, 12, 12, width - 24, height - 24, 8);
       ctx.fill();
-      ctx.strokeStyle = '#d9dee8';
+      ctx.strokeStyle = '#cfd5de';
       ctx.lineWidth = 1;
       ctx.stroke();
     }
@@ -1009,7 +1087,8 @@
 
       const ctx = canvas.getContext('2d');
       ctx.scale(scale, scale);
-      drawCementBackground(ctx, pageWidth, pageHeight);
+      const textureImage = await loadConcreteTexture();
+      drawCementBackground(ctx, pageWidth, pageHeight, textureImage);
       drawDocumentPanel(ctx, pageWidth, pageHeight);
 
       const logoSource = window.AL_RAFIF_LOGO_DATA_URL || 'al-rafif-logo.png';
@@ -1071,14 +1150,14 @@
         ['المبلغ المتبقي', data.remaining ? `${formatMoney(data.remaining)} ريال` : '-']
       ];
 
-      let y = 326;
+      let y = 318;
       const labelWidth = 132;
       const valueWidth = contentWidth - labelWidth;
 
       rows.forEach(([label, value], index) => {
         ctx.font = '14px Tahoma, Arial, sans-serif';
         const valueLines = wrapText(ctx, value, valueWidth - 24);
-        const rowHeight = Math.max(54, 22 + (valueLines.length * 20));
+        const rowHeight = Math.max(48, 20 + (valueLines.length * 18));
 
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(padding, y, contentWidth, rowHeight);
@@ -1093,12 +1172,12 @@
         ctx.lineTo(pageWidth - padding - labelWidth, y + rowHeight);
         ctx.stroke();
 
-        drawText(ctx, label, pageWidth - padding - 10, y + 33, {
+        drawText(ctx, label, pageWidth - padding - 10, y + 30, {
           font: 'bold 13px Tahoma, Arial, sans-serif',
           color: '#0e475b'
         });
 
-        drawWrappedText(ctx, value, pageWidth - padding - labelWidth - 12, y + 16, valueWidth - 24, 20, {
+        drawWrappedText(ctx, value, pageWidth - padding - labelWidth - 12, y + 14, valueWidth - 24, 18, {
           font: index === rows.length - 1 ? 'bold 14px Tahoma, Arial, sans-serif' : '14px Tahoma, Arial, sans-serif',
           color: index === rows.length - 1 ? '#087f5b' : '#18212f'
         });
@@ -1110,22 +1189,22 @@
       const status = Number.isFinite(remaining) && remaining <= 0 ? 'مدفوع بالكامل' : 'يوجد مبلغ متبقي';
 
       ctx.fillStyle = '#f8fbfa';
-      drawRoundRect(ctx, padding, y + 22, contentWidth, 64, 8);
+      drawRoundRect(ctx, padding, y + 18, contentWidth, 58, 8);
       ctx.fill();
       ctx.strokeStyle = '#c9ded8';
       ctx.stroke();
-      drawText(ctx, 'الحالة المالية', pageWidth - padding - 14, y + 48, {
+      drawText(ctx, 'الحالة المالية', pageWidth - padding - 14, y + 40, {
         font: 'bold 13px Tahoma, Arial, sans-serif',
         color: '#0e475b'
       });
-      drawText(ctx, status, pageWidth - padding - 14, y + 72, {
+      drawText(ctx, status, pageWidth - padding - 14, y + 63, {
         font: 'bold 15px Tahoma, Arial, sans-serif',
         color: '#087f5b'
       });
 
-      const footerLineY = pageHeight - 108;
-      const footerTextY = pageHeight - 88;
-      const contactBoxY = pageHeight - 70;
+      const footerLineY = pageHeight - 116;
+      const footerTextY = pageHeight - 95;
+      const contactBoxY = pageHeight - 75;
       const pageNumberY = pageHeight - 22;
 
       ctx.strokeStyle = '#d9dee8';
@@ -1167,7 +1246,8 @@
 
       const ctx = canvas.getContext('2d');
       ctx.scale(scale, scale);
-      drawCementBackground(ctx, pageWidth, pageHeight);
+      const textureImage = await loadConcreteTexture();
+      drawCementBackground(ctx, pageWidth, pageHeight, textureImage);
       drawDocumentPanel(ctx, pageWidth, pageHeight);
 
       const padding = 20;

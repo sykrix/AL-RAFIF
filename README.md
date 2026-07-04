@@ -7,6 +7,8 @@
 - `index.html`: الصفحة الرئيسية والنموذج وتوليد PDF.
 - `al-rafif-logo.png`: شعار استراحة الرفيف.
 - `logo-data.js`: نسخة مدمجة من الشعار لاستخدامها داخل PDF.
+- `concrete-texture.png`: خلفية إسمنتية للموقع والفاتورة.
+- `texture-data.js`: نسخة مدمجة من الخلفية لاستخدامها داخل PDF.
 - `.nojekyll`: لضمان عمل الموقع على GitHub Pages بدون معالجة إضافية.
 
 ## الرفع على GitHub Pages
