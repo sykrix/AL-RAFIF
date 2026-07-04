@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>فاتورة حجز - استراحة الرفيف</title>
   <style>
     :root {
@@ -67,11 +70,11 @@
       width: 92px;
       height: 64px;
       flex: 0 0 auto;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.84);
+      border: 0;
+      border-radius: 0;
+      background: transparent;
       object-fit: contain;
-      padding: 4px;
+      padding: 0;
     }
 
     h1 {
@@ -1438,6 +1441,51 @@
       }, 1000);
     });
 
+    function registerAutoUpdateWorker() {
+      if (!('serviceWorker' in navigator) || window.location.protocol === 'file:') {
+        return;
+      }
+
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) {
+          return;
+        }
+        refreshing = true;
+        const url = new URL(window.location.href);
+        url.searchParams.set('updated', Date.now().toString());
+        window.location.replace(url.toString());
+      });
+
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((registration) => {
+        function activateWaitingWorker() {
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }
+
+        activateWaitingWorker();
+        registration.addEventListener('updatefound', () => {
+          const worker = registration.installing;
+          if (!worker) {
+            return;
+          }
+          worker.addEventListener('statechange', () => {
+            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+              worker.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+
+        setInterval(() => {
+          registration.update();
+        }, 60000);
+      }).catch(() => {
+        // The site still works normally if updates cannot be registered.
+      });
+    }
+
+    registerAutoUpdateWorker();
     setupBookingDate();
     updatePreview();
   </script>
